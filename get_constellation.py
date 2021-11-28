@@ -3,6 +3,7 @@ from astropy.timeseries import TimeSeries
 import numpy as np
 import pandas as pd
 from astropy.time import Time
+import datetime as dt
 
 
 # Gregorian Days of the Year
@@ -27,24 +28,20 @@ def calc_date(year):
 
 # Create DataFrame
 dates = calc_date(1986)
-df = pd.DataFrame({'Date': dates})
 times = Time(dates)
+df = pd.DataFrame({'Date': dates})
 df['Sign'] = get_sun(times).get_constellation()
-df = df.set_index('Sign')
 
-# Find min and max fo reach sign.
-signs = ['Aquarius', 'Pisces', 'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo',
-    'Virgo', 'Libra', 'Scorpius', 'Ophiucus', 'Sagittarius', 'Capricornus']
-min_val = []
-max_val = []
-for s in signs:
-    min_val.append(df.loc[s].min().values[0])
-    max_val.append(df.loc[s].max().values[0])
+# Get month in each entry.
+month = [dt.datetime.strptime(d, '%Y-%m-%d').month for d in dates]
+df['Month'] = month
 
-# final dataframe
-ndf = pd.DataFrame({
-    'Sign': signs,
-    'Min': min_val,
-    'Max': max_val
-    })
-print(ndf)
+# Find min/max in December/Jan.
+w = df['Month'].isin([1])
+jan_uni = df['Sign'][w].unique()
+w = df['Month'].isin([12])
+dec_uni = df['Sign'][w].unique()
+
+inter = set(jan_uni).intersection(dec_uni)
+
+print(list(inter)[0])
