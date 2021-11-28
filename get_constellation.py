@@ -1,5 +1,4 @@
 from astropy.coordinates import get_sun, get_constellation
-from astropy.timeseries import TimeSeries
 import numpy as np
 import pandas as pd
 from astropy.time import Time
@@ -27,7 +26,7 @@ def calc_date(year):
     return dates
 
 # Create DataFrame
-dates = calc_date(1986)
+dates = calc_date(1850)
 times = Time(dates)
 df = pd.DataFrame({'Date': dates})
 df['Sign'] = get_sun(times).get_constellation()
@@ -36,12 +35,38 @@ df['Sign'] = get_sun(times).get_constellation()
 month = [dt.datetime.strptime(d, '%Y-%m-%d').month for d in dates]
 df['Month'] = month
 
-# Find min/max in December/Jan.
+# Save special sign in December and Jan.
 w = df['Month'].isin([1])
 jan_uni = df['Sign'][w].unique()
 w = df['Month'].isin([12])
 dec_uni = df['Sign'][w].unique()
-
 inter = set(jan_uni).intersection(dec_uni)
+special_sign = list(inter)[0]
 
-print(list(inter)[0])
+# Find special min and max.
+w = (df['Month'] == 12) * (df['Sign'] == special_sign)
+special_min = df['Date'][w].min()
+w = (df['Month'] == 1) * (df['Sign'] == special_sign)
+special_max = df['Date'][w].max()
+
+# Create new dataframe.
+df = df.set_index('Sign')
+signs = ['Aquarius', 'Pisces', 'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo',
+    'Virgo', 'Libra', 'Scorpius', 'Ophiucus', 'Sagittarius', 'Capricornus']
+min_val = []
+max_val = []
+for s in signs:
+    min_val.append(df.loc[s].min().values[0])
+    max_val.append(df.loc[s].max().values[0])
+
+ndf = pd.DataFrame({
+    'Constellation': signs,
+    'From': min_val,
+    'To': max_val
+    })
+
+# Enter special min and special max in new data frame.
+w = ndf['Constellation'] == special_sign
+ndf.loc[w, 'From'] = special_min
+ndf.loc[w, 'To'] = special_max
+ndf.to_csv('zodiac_sign.csv', index=False)
