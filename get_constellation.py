@@ -33,6 +33,18 @@ df['Sign'] = get_sun(times).get_constellation()
 df = df.set_index('Sign')
 
 # Find min and max fo reach sign.
-signs = ['Aquarius', 'Pisces', 'Aries', 'Taurus', ]
+signs = ['Aquarius', 'Pisces', 'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo',
+    'Virgo', 'Libra', 'Scorpius', 'Ophiucus', 'Sagittarius', 'Capricornus']
+min_val = []
+max_val = []
+for s in signs:
+    min_val.append(df.loc[s].min().values[0])
+    max_val.append(df.loc[s].max().values[0])
 
-print(df.loc['Libra'].max())
+# final dataframe
+ndf = pd.DataFrame({
+    'Sign': signs,
+    'Min': min_val,
+    'Max': max_val
+    })
+print(ndf)
