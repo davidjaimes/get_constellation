@@ -25,48 +25,56 @@ def calc_date(year):
                 dates.append(f'{year:04d}-{x:02d}-{y:02d}')
     return dates
 
-# Create DataFrame
-dates = calc_date(1850)
-times = Time(dates)
-df = pd.DataFrame({'Date': dates})
-df['Sign'] = get_sun(times).get_constellation()
 
-# Get month in each entry.
-month = [dt.datetime.strptime(d, '%Y-%m-%d').month for d in dates]
-df['Month'] = month
+ndfs = []
+for x in range(1901, 2100):
+    # Create DataFrame
+    dates = calc_date(x)
+    times = Time(dates)
+    df = pd.DataFrame({'Date': dates})
+    df['Sign'] = get_sun(times).get_constellation()
 
-# Save special sign in December and Jan.
-w = df['Month'].isin([1])
-jan_uni = df['Sign'][w].unique()
-w = df['Month'].isin([12])
-dec_uni = df['Sign'][w].unique()
-inter = set(jan_uni).intersection(dec_uni)
-special_sign = list(inter)[0]
+    # Get month in each entry.
+    month = [dt.datetime.strptime(d, '%Y-%m-%d').month for d in dates]
+    df['Month'] = month
 
-# Find special min and max.
-w = (df['Month'] == 12) * (df['Sign'] == special_sign)
-special_min = df['Date'][w].min()
-w = (df['Month'] == 1) * (df['Sign'] == special_sign)
-special_max = df['Date'][w].max()
+    # Save special sign in December and Jan.
+    w = df['Month'].isin([1])
+    jan_uni = df['Sign'][w].unique()
+    w = df['Month'].isin([12])
+    dec_uni = df['Sign'][w].unique()
+    inter = set(jan_uni).intersection(dec_uni)
+    special_sign = list(inter)[0]
 
-# Create new dataframe.
-df = df.set_index('Sign')
-signs = ['Aquarius', 'Pisces', 'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo',
-    'Virgo', 'Libra', 'Scorpius', 'Ophiucus', 'Sagittarius', 'Capricornus']
-min_val = []
-max_val = []
-for s in signs:
-    min_val.append(df.loc[s].min().values[0])
-    max_val.append(df.loc[s].max().values[0])
+    # Find special min and max.
+    w = (df['Month'] == 12) * (df['Sign'] == special_sign)
+    special_min = df['Date'][w].min()
+    w = (df['Month'] == 1) * (df['Sign'] == special_sign)
+    special_max = df['Date'][w].max()
 
-ndf = pd.DataFrame({
-    'Constellation': signs,
-    'From': min_val,
-    'To': max_val
-    })
+    # Create new dataframe.
+    df = df.set_index('Sign')
+    signs = ['Aquarius', 'Pisces', 'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo',
+        'Virgo', 'Libra', 'Scorpius', 'Ophiucus', 'Sagittarius', 'Capricornus']
+    min_val = []
+    max_val = []
+    for s in signs:
+        min_val.append(df.loc[s].min().values[0])
+        max_val.append(df.loc[s].max().values[0])
 
-# Enter special min and special max in new data frame.
-w = ndf['Constellation'] == special_sign
-ndf.loc[w, 'From'] = special_min
-ndf.loc[w, 'To'] = special_max
+    ndf = pd.DataFrame({
+        'Constellation': signs,
+        'From': min_val,
+        'To': max_val
+        })
+
+    # Enter special min and special max in new data frame.
+    w = ndf['Constellation'] == special_sign
+    ndf.loc[w, 'From'] = special_min
+    ndf.loc[w, 'To'] = special_max
+    ndfs.append(ndf)
+
+ndf = pd.concat(ndfs)
 ndf.to_csv('zodiac_sign.csv', index=False)
+ndf = ndf.reset_index()
+ndf.to_json('zodiac.json')
